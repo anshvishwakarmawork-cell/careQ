@@ -97,6 +97,7 @@ export const Login = () => {
           <Link to="/register" className="text-primary text-sm font-medium hover:text-[#00c2e6]">Don't have an account? Register</Link>
         </div>
       </div>
+      </div>
     </CareQueueBackground>
   );
 };
