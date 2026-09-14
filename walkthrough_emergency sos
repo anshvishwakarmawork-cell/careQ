@@ -1,0 +1,35 @@
+# CareQueue Emergency Request Workflow
+
+The Emergency Request feature has been successfully implemented across the Patient, Reception, and Doctor views, providing a seamless and safe coordination flow without acting as an automated triage system.
+
+## 1. Patient Experience (Appointment Booking Flow)
+When a patient tries to join the queue or book an appointment, they now see a prominent **"Is this a medical emergency?"** button.
+Clicking this opens the **Emergency Request Form**, which features:
+- A prominent red warning stating that the app is not a substitute for 911/emergency services.
+- Mandatory fields for patient info, emergency type, short description, and time started.
+- Quick yes/no safety questions (conscious, breathing, bleeding, mobility).
+- A required acknowledgment checkbox before submission.
+
+Once submitted, the patient sees a confirmation screen indicating the request is under review by the reception staff, along with a final warning to call emergency services if the situation is life-threatening.
+
+## 2. Reception Experience (Coordination & Triage)
+The **Reception Dashboard** now features an **Active Emergency Requests** panel directly below the header.
+- This panel displays any incoming emergency requests highlighted in a flashing red banner.
+- The coordinator can view the patient's critical info and contact details at a glance.
+- Action buttons allow the coordinator to manage the workflow: 
+  - `Start Review` -> `Accept & Prep Dept` (or `Reject / Redirect`).
+  - When `Accept & Prep Dept` is clicked, the system activates the `EMERGENCY_PREPARATION_ACTIVE` status for the target doctor's department.
+  - The coordinator can then track the patient: `Mark En-Route` -> `Patient Arrived` -> `Hand to Doctor` -> `Complete Workflow`.
+  - Completing or rejecting the workflow clears the emergency preparation status, resuming normal queue operations.
+
+## 3. Doctor Experience (Queue Management)
+When a department enters `EMERGENCY_PREPARATION_ACTIVE` mode:
+- The **Doctor Dashboard** displays a prominent, pulsing red banner notifying them of an incoming emergency.
+- The system prevents them from calling the next normal patient from the queue (the `Call Next Patient` button is disabled).
+- The doctor can still complete their current consultation, but cannot advance the queue until the reception clears the emergency state.
+- Normal waiting patients are unaffected and unaware of the incoming emergency, maintaining privacy and calm in the waiting room.
+
+## 4. System Automation
+The simulated live queue logic has been updated to respect the `departmentStatus`. The background automated interval checks for `EMERGENCY_PREPARATION_ACTIVE` and automatically pauses advancing the queue for the affected department.
+
+This ensures the system safely coordinates incoming emergencies while keeping humans in the loop.

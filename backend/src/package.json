@@ -1,0 +1,17 @@
+{
+  "name": "carequeue-backend",
+  "version": "1.0.0",
+  "description": "CareQueue AWS Serverless Backend",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.550.0",
+    "@aws-sdk/lib-dynamodb": "^3.550.0",
+    "@aws-sdk/client-apigatewaymanagementapi": "^3.550.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
