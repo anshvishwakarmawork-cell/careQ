@@ -4,6 +4,9 @@ import { useNavigate, Link, useLocation } from "react-router-dom";
 import { ACTIONS } from "../../store/actions";
 import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
+import { CareQueueBackground } from "../../components/logo/CareQueueBackground";
+import { SiteHeader } from "../../components/ui/SiteHeader";
+import { CareQueueLogo } from "../../components/logo/CareQueueLogo";
 
 export const Login = () => {
   const { state, dispatch } = useQueue();
@@ -45,9 +48,13 @@ export const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-section flex flex-col items-center justify-center p-4">
-      <div className="max-w-md w-full bg-background rounded-xl p-8 shadow-sm border border-[#E2E8F0]">
-        <h1 className="text-2xl font-bold text-navy mb-6 text-center">CareQueue Login</h1>
+    <CareQueueBackground>
+      <SiteHeader />
+      <div className="min-h-[calc(100vh-80px)] flex flex-col items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white/90 backdrop-blur-md rounded-xl p-8 shadow-xl border border-[#E2E8F0] relative z-10">
+          <div className="flex justify-center mb-8">
+            <CareQueueLogo variant="horizontal" animated={false} />
+          </div>
         
         <form onSubmit={onSubmit} className="space-y-4 mb-8">
           <Input 
@@ -87,10 +94,10 @@ export const Login = () => {
         </div>
         
         <div className="mt-6 text-center">
-          <Link to="/register" className="text-primary text-sm font-medium">Don't have an account? Register</Link>
+          <Link to="/register" className="text-primary text-sm font-medium hover:text-[#00c2e6]">Don't have an account? Register</Link>
         </div>
       </div>
-    </div>
+    </CareQueueBackground>
   );
 };
 
