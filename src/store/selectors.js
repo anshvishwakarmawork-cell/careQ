@@ -48,7 +48,7 @@ export const getDoctorStats = (state, doctorId) => {
 
 export const getActiveEntryForPatient = (state, patientId) => {
   return state.queueEntries.find(e => e.patientId === patientId && 
-    (e.status === "WAITING" || e.status === "CALLED" || e.status === "IN_CONSULTATION" || e.verificationStatus === "PENDING_VERIFICATION"));
+    (e.status === "WAITING" || e.status === "CALLED" || e.status === "IN_CONSULTATION"));
 };
 
 export const getPendingRequests = (state, hospitalId) => {

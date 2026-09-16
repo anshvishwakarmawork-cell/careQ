@@ -14,7 +14,8 @@ export const initialState = {
   departments: [],
   emergencyRequests: [],
   departmentStatus: {},
-  qrPoints: []
+  qrPoints: [],
+  broadcasts: []
 };
 
 export const queueReducer = (state, action) => {
@@ -274,6 +275,37 @@ export const queueReducer = (state, action) => {
           n.id === action.payload.id ? { ...n, read: true } : n
         )
       };
+    case ACTIONS.MARK_POPUP_SEEN:
+      return {
+        ...state,
+        notifications: state.notifications.map(n =>
+          n.id === action.payload.id ? { ...n, popupSeen: true } : n
+        )
+      };
+    case ACTIONS.CREATE_BROADCAST:
+      return {
+        ...state,
+        broadcasts: [action.payload.broadcast, ...state.broadcasts],
+        notifications: [...action.payload.targetedNotifications, ...state.notifications]
+      };
+    case ACTIONS.BULK_RESCHEDULE_APPOINTMENTS: {
+      const { appointmentIds, newDate, newTime, status } = action.payload;
+      return {
+        ...state,
+        appointments: state.appointments.map(a => 
+          appointmentIds.includes(a.id) 
+            ? { 
+                ...a, 
+                date: newDate || a.date, 
+                time: newTime || a.time,
+                status: status || a.status,
+                doctorId: action.payload.doctorId || a.doctorId,
+                departmentId: action.payload.departmentId || a.departmentId
+              } 
+            : a
+        )
+      };
+    }
     case ACTIONS.REGISTER_PATIENT: {
       const { user, patient } = action.payload;
       return {
@@ -390,6 +422,7 @@ export const queueReducer = (state, action) => {
         hospitalId: doctor?.hospitalId,
         date,
         time,
+        appointmentTime: `${date}T${time}:00Z`,
         status: "SCHEDULED",
         createdAt: new Date().toISOString()
       };

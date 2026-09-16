@@ -4,6 +4,7 @@ import { BottomTabBar, TabBarItem } from "../../components/ui/BottomTabBar";
 import { Home, Search, Ticket, Calendar, Bell, User, ChevronRight, ChevronDown, X } from 'lucide-react';
 import { useQueue } from "../../store/QueueStore";
 import { getActiveEntryForPatient } from "../../store/selectors";
+import { PatientPopup } from "./PatientPopup";
 
 export const PatientLayout = () => {
   const { state } = useQueue();
@@ -188,6 +189,9 @@ export const PatientLayout = () => {
           </div>
         </div>
       )}
+      
+      {/* Patient targeted popup notifications */}
+      <PatientPopup />
     </div>
   );
 };

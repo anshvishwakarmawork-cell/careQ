@@ -8,6 +8,22 @@ export const users = [
     name: "Ansh"
   },
   {
+    id: "U1-rohan",
+    email: "rohan@demo.com",
+    password: "demo",
+    role: "PATIENT",
+    patientId: "P10",
+    name: "Rohan Kapoor"
+  },
+  {
+    id: "U1-priya",
+    email: "priya@demo.com",
+    password: "demo",
+    role: "PATIENT",
+    patientId: "P1",
+    name: "Priya Mehta"
+  },
+  {
     id: "U2",
     email: "doctor@demo.com",
     password: "demo",

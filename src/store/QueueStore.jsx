@@ -19,20 +19,40 @@ export const QueueProvider = ({ children }) => {
   const useMock = import.meta.env.VITE_USE_MOCK !== "false"; // Default to true if not explicitly false
 
   // Populate initial state with mock data
-  const initialState = {
-    ...emptyState,
-    doctors: useMock ? doctors : [],
-    queueEntries: useMock ? queueEntries : [],
-    appointments: useMock ? appointments : [],
-    users: initialUsers,
-    patients: initialPatients,
-    hospitals: initialHospitals,
-    departments: initialDepartments,
-    qrPoints: useMock ? qrPoints : [],
-    notifications: useMock ? initialNotifications : []
+  const getInitialState = () => {
+    const baseState = {
+      ...emptyState,
+      doctors: useMock ? doctors : [],
+      queueEntries: useMock ? queueEntries : [],
+      appointments: useMock ? appointments : [],
+      users: initialUsers,
+      patients: initialPatients,
+      hospitals: initialHospitals,
+      departments: initialDepartments,
+      qrPoints: useMock ? qrPoints : [],
+      notifications: useMock ? initialNotifications : []
+    };
+
+    if (useMock) {
+      try {
+        const saved = localStorage.getItem("carequeue_mock_state_v3");
+        if (saved) {
+          return { ...baseState, ...JSON.parse(saved) };
+        }
+      } catch (e) {
+        console.error("Failed to load state from localStorage", e);
+      }
+    }
+    return baseState;
   };
 
-  const [state, baseDispatch] = useReducer(queueReducer, initialState);
+  const [state, baseDispatch] = useReducer(queueReducer, getInitialState());
+
+  useEffect(() => {
+    if (useMock) {
+      localStorage.setItem("carequeue_mock_state_v3", JSON.stringify(state));
+    }
+  }, [state, useMock]);
 
   // Initialize WebSockets
   useEffect(() => {

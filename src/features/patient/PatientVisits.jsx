@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueue } from "../../store/QueueStore";
 import { ACTIONS } from "../../store/actions";
 import { Card } from "../../components/ui/Card";
-import { getActiveEntryForPatient } from "../../store/selectors";
+import { getActiveEntryForPatient, getPendingRequestsForPatient } from "../../store/selectors";
 import { formatDoctorName, formatHumanReadableDate } from "../../lib/format";
 import { Calendar, Clock, Activity, XCircle } from "lucide-react";
 
@@ -28,6 +28,8 @@ export const PatientVisits = () => {
   const myHistory = queueEntries.filter(e => e.patientId === currentUser.patientId && (e.status === "COMPLETED" || e.status === "SKIPPED"));
   
   const activeEntry = currentUser ? getActiveEntryForPatient(state, currentUser.patientId) : null;
+  const pendingRequests = currentUser ? getPendingRequestsForPatient(state, currentUser.patientId) : [];
+  const hasPendingRequest = pendingRequests.length > 0;
 
   const handleCancel = (id) => {
     dispatch({ type: ACTIONS.CANCEL_APPOINTMENT, payload: { appointmentId: id } });
@@ -104,11 +106,11 @@ export const PatientVisits = () => {
                   {isToday ? (
                     <button 
                       onClick={() => handleJoinQueue(a)}
-                      disabled={!!activeEntry}
+                      disabled={!!activeEntry || hasPendingRequest}
                       className="flex-1 bg-primary text-white py-2.5 rounded-xl text-sm font-bold disabled:opacity-50 hover:bg-blue-700 transition-colors shadow-sm"
                     >
-                      {activeEntry 
-                        ? (activeEntry.verificationStatus === "PENDING_VERIFICATION" 
+                      {activeEntry || hasPendingRequest
+                        ? (hasPendingRequest 
                             ? "Request Pending" 
                             : "Queue Active") 
                         : "Join Queue Now"}

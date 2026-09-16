@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQueue } from "../../store/QueueStore";
-import { getActiveEntryForPatient } from "../../store/selectors";
+import { getActiveEntryForPatient, getPendingRequestsForPatient } from "../../store/selectors";
 import { ACTIONS } from "../../store/actions";
 import { Card } from "../../components/ui/Card";
 import { AlertTriangle } from "lucide-react";
@@ -24,6 +24,8 @@ export const DoctorView = () => {
   if (!doctor) return <div className="p-4">Doctor not found</div>;
 
   const activeEntry = currentUser ? getActiveEntryForPatient(state, currentUser.patientId) : null;
+  const pendingRequests = currentUser ? getPendingRequestsForPatient(state, currentUser.patientId) : [];
+  const hasPendingRequest = pendingRequests.length > 0;
   const isUnavailable = doctor.status === "UNAVAILABLE" || doctor.status === "ON_BREAK";
   
   const waitingQueue = state.queueEntries.filter(e => e.doctorId === doctor.id && (e.status === "WAITING" || e.status === "CALLED"));
@@ -209,11 +211,11 @@ export const DoctorView = () => {
           <div className="mt-8">
             <button 
               className="w-full bg-primary text-white py-4 rounded-xl font-bold text-lg disabled:opacity-50"
-              disabled={isUnavailable || activeEntry}
+              disabled={isUnavailable || activeEntry || hasPendingRequest}
               onClick={handleJoinQueue}
             >
-              {activeEntry 
-                ? (activeEntry.verificationStatus === "PENDING_VERIFICATION" 
+              {activeEntry || hasPendingRequest
+                ? (hasPendingRequest 
                     ? "You already have a queue request waiting for verification" 
                     : "You already have an active token") 
                 : "Join Queue"}

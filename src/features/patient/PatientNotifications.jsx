@@ -26,7 +26,25 @@ export const PatientNotifications = () => {
               if (!n.read) dispatch({ type: ACTIONS.MARK_NOTIFICATION_READ, payload: { id: n.id } });
             }}
           >
-            <p className={`text-navy ${n.read ? '' : 'font-semibold'}`}>{n.message}</p>
+            <div className="flex justify-between items-start">
+              <p className={`text-navy ${n.read ? '' : 'font-semibold'}`}>{n.message}</p>
+            </div>
+            
+            {(n.oldDate || n.newDate || n.oldTime || n.newTime) && (
+              <div className="bg-white/50 p-3 rounded-md text-sm mt-3 space-y-2 border border-blue-50">
+                {(n.oldDate || n.oldTime) && (
+                  <div className="flex items-start gap-2 text-gray-500 line-through">
+                    <span>Previous: {n.oldDate} {n.oldTime && `• ${n.oldTime}`}</span>
+                  </div>
+                )}
+                {(n.newDate || n.newTime) && (
+                  <div className="flex items-start gap-2 text-primary font-medium">
+                    <span>New: {n.newDate} {n.newTime && `• ${n.newTime}`}</span>
+                  </div>
+                )}
+              </div>
+            )}
+            
             <p className="text-xs text-muted mt-2">{new Date(n.createdAt).toLocaleTimeString()}</p>
           </Card>
         ))
