@@ -51,6 +51,10 @@
 - Full mapping of every action in the reducer to a dedicated Lambda function is stubbed.
 - Cognito User Pool integration with frontend login is stubbed (mock tokens used).
 
+### Recent Updates
+- Fully implemented Reception Dashboard (`/reception/dashboard`) with dynamic data from the store, `StatCard` integration, and responsive layouts.
+- Audited and implemented all stubbed components in `src/components` according to `docs/DESIGN.md`, ensuring styling consistency across the app.
+
 ### How to Test (Local Mock Mode)
 1. Ensure `.env` has `VITE_USE_MOCK=true`.
 2. Run `npm run dev`.

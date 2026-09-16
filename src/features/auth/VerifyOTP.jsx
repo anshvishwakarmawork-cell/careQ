@@ -36,9 +36,25 @@ export const VerifyOTP = () => {
           id: `P${Date.now()}`,
           name: pendingUser.name,
           mobile: pendingUser.mobile,
+          email: pendingUser.email,
           gender: pendingUser.gender,
           dob: pendingUser.dob,
-          city: pendingUser.city
+          city: pendingUser.city,
+          preferredLanguage: pendingUser.language || "English",
+          emergencyContact: {
+            name: pendingUser.emergencyName || "",
+            mobile: pendingUser.emergencyNumber || ""
+          },
+          address: "",
+          notifications: {
+            queue: pendingUser.optInNotifications,
+            appointments: pendingUser.optInNotifications
+          },
+          mobileVerified: true,
+          emailVerified: false,
+          profilePhoto: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         };
 
         const newUser = {
@@ -52,7 +68,7 @@ export const VerifyOTP = () => {
 
         dispatch({ type: ACTIONS.REGISTER_PATIENT, payload: { user: newUser, patient: newPatient } });
         dispatch({ type: ACTIONS.LOGIN, payload: newUser });
-        navigate("/patient");
+        navigate("/patient/dashboard");
       }
     }
   };

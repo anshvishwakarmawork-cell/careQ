@@ -1,16 +1,13 @@
-
 import React from 'react';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { Card, CardContent } from '../ui/Card';
 
-export function cn(...inputs) {
-  return twMerge(clsx(inputs));
-}
-
-export const QueueStatsCard = ({ className, children, ...props }) => {
+export const QueueStatsCard = ({ title, value, className }) => {
   return (
-    <div className={cn("", className)} {...props}>
-      {children || 'QueueStatsCard'}
-    </div>
+    <Card className={`shadow-sm ${className || ''}`}>
+      <CardContent className="p-4 flex flex-col justify-center text-center">
+        <div className="text-sm font-medium text-slate-500 mb-1">{title}</div>
+        <div className="text-2xl font-bold text-navy">{value}</div>
+      </CardContent>
+    </Card>
   );
 };

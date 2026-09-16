@@ -1,9 +1,11 @@
 import React from "react";
 import { useQueue } from "../../store/QueueStore";
 import { ACTIONS } from "../../store/actions";
+import { useNavigate } from "react-router-dom";
 
 export const DevPill = () => {
   const { state, dispatch } = useQueue();
+  const navigate = useNavigate();
 
   if (!import.meta.env.DEV) return null;
 
@@ -11,7 +13,7 @@ export const DevPill = () => {
 
   const handleApprove = () => {
     unverifiedDoctors.forEach(doc => {
-      dispatch({ type: ACTIONS.APPROVE_DOCTOR, payload: { email: doc.email } });
+      dispatch({ type: ACTIONS.APPROVE_DOCTOR_REQUEST, payload: { doctorId: doc.id } });
     });
     alert("Approved pending doctors");
   };
@@ -23,16 +25,23 @@ export const DevPill = () => {
           <label className="mr-2 font-semibold">Role:</label>
           <select 
             className="border rounded p-1"
-            value={state.currentUser?.role || ""}
+            value={state.currentUser?.id || ""}
             onChange={(e) => {
-              const user = state.users.find(u => u.role === e.target.value);
-              if(user) dispatch({ type: ACTIONS.SWITCH_ROLE_DEV, payload: user });
+              const user = state.users.find(u => u.id === e.target.value);
+              if(user) {
+                dispatch({ type: ACTIONS.SWITCH_ROLE_DEV, payload: user });
+                if (user.role === "PATIENT") navigate("/patient/dashboard");
+                if (user.role === "DOCTOR") navigate("/doctor/dashboard");
+                if (user.role === "RECEPTION") navigate("/reception/dashboard");
+              }
             }}
           >
             <option value="">None</option>
-            <option value="PATIENT">Patient</option>
-            <option value="DOCTOR">Doctor</option>
-            <option value="RECEPTION">Reception</option>
+            <option value="U1">Patient</option>
+            <option value="U2">Doctor (Ankit Sharma)</option>
+            <option value="U3">Reception (City Care)</option>
+            <option value="U4">Reception (Medicare)</option>
+            <option value="U5">Reception (Apollo)</option>
           </select>
         </div>
         <div>

@@ -6,7 +6,12 @@ export const OTPInput = ({ length = 6, value, onChange }) => {
 
   useEffect(() => {
     if (value) {
-      setOtp(value.split("").slice(0, length));
+      const valArray = value.split("").slice(0, length);
+      const newOtp = new Array(length).fill("");
+      valArray.forEach((char, i) => newOtp[i] = char);
+      setOtp(newOtp);
+    } else {
+      setOtp(new Array(length).fill(""));
     }
   }, [value, length]);
 

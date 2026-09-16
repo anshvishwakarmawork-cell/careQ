@@ -3,24 +3,10 @@ import { smartEstimate } from "../lib/waitTime";
 
 export const getQueueForDoctor = (state, doctorId) => {
   const entries = state.queueEntries.filter(e => e.doctorId === doctorId && e.status !== "CANCELLED");
-  // Priority ordering logic implemented here or in components, 
-  // but as per brief, the state machine or selectors should enforce ordering:
-  // 1. priority DESC (EMERGENCY > URGENT > PRIORITY > NORMAL)
-  // 2. checkedIn DESC
-  // 3. APPOINTMENT with appointmentTime <= now before WALK_IN
-  // 4. joinedAt ASC
   return entries.sort((a, b) => {
-    // 1. Priority
     const pWeight = { EMERGENCY: 4, URGENT: 3, PRIORITY: 2, NORMAL: 1 };
     if (pWeight[a.priority] !== pWeight[b.priority]) return pWeight[b.priority] - pWeight[a.priority];
-    
-    // 2. CheckedIn
     if (a.checkedIn !== b.checkedIn) return a.checkedIn ? -1 : 1;
-    
-    // 3. Appt vs Walk-in (simplified for now: appt before walkin if time is past, but here just use joinedAt if same)
-    // Detailed logic goes here as needed.
-    
-    // 4. JoinedAt
     return new Date(a.joinedAt) - new Date(b.joinedAt);
   });
 };
@@ -62,13 +48,98 @@ export const getDoctorStats = (state, doctorId) => {
 
 export const getActiveEntryForPatient = (state, patientId) => {
   return state.queueEntries.find(e => e.patientId === patientId && 
-    (e.status === "WAITING" || e.status === "CALLED" || e.status === "IN_CONSULTATION"));
+    (e.status === "WAITING" || e.status === "CALLED" || e.status === "IN_CONSULTATION" || e.verificationStatus === "PENDING_VERIFICATION"));
+};
+
+export const getPendingRequests = (state, hospitalId) => {
+  if (!hospitalId) return [];
+  return state.queueEntries.filter(e => e.hospitalId === hospitalId && e.verificationStatus === "PENDING_VERIFICATION");
 };
 
 export const getHospitalQueue = (state, hospitalId) => {
+  if (!hospitalId) return [];
   return state.queueEntries.filter(e => e.hospitalId === hospitalId);
+};
+
+export const getDoctorsByHospital = (state, hospitalId) => {
+  if (!hospitalId) return [];
+  return state.doctors.filter(d => d.hospitalId === hospitalId);
+};
+
+export const getAppointmentsByHospital = (state, hospitalId) => {
+  if (!hospitalId) return [];
+  return (state.appointments || []).filter(a => a.hospitalId === hospitalId);
+};
+
+export const getEmergenciesByHospital = (state, hospitalId) => {
+  if (!hospitalId) return [];
+  return (state.emergencyRequests || []).filter(r => r.hospitalId === hospitalId);
 };
 
 export const getUnreadCount = (state, userId) => {
   return state.notifications.filter(n => n.userId === userId && !n.read).length;
 };
+
+export const getTodayAppointments = (state, hospitalId) => {
+  const todayStr = new Date().toISOString().split("T")[0];
+  return getAppointmentsByHospital(state, hospitalId)
+    .filter(app => app.appointmentTime && app.appointmentTime.startsWith(todayStr) && app.status !== "CANCELLED")
+    .sort((a, b) => new Date(a.appointmentTime) - new Date(b.appointmentTime));
+};
+
+export const getUpcomingAppointments = (state, hospitalId) => {
+  const todayStr = new Date().toISOString().split("T")[0];
+  return getAppointmentsByHospital(state, hospitalId)
+    .filter(app => app.appointmentTime && app.appointmentTime > todayStr && app.appointmentTime.split("T")[0] !== todayStr && app.status !== "CANCELLED")
+    .sort((a, b) => new Date(a.appointmentTime) - new Date(b.appointmentTime));
+};
+
+export const getPastAppointments = (state, hospitalId) => {
+  const todayStr = new Date().toISOString().split("T")[0];
+  return getAppointmentsByHospital(state, hospitalId)
+    .filter(app => app.appointmentTime && (app.appointmentTime < todayStr || app.status === "COMPLETED") && app.appointmentTime.split("T")[0] !== todayStr && app.status !== "CANCELLED")
+    .sort((a, b) => new Date(b.appointmentTime) - new Date(a.appointmentTime));
+};
+
+export const getCancelledAppointments = (state, hospitalId) => {
+  return getAppointmentsByHospital(state, hospitalId)
+    .filter(app => app.status === "CANCELLED")
+    .sort((a, b) => new Date(b.appointmentTime) - new Date(a.appointmentTime));
+};
+
+export const getReceptionDashboardStats = (state, hospitalId) => {
+  const scopedDoctors = getDoctorsByHospital(state, hospitalId);
+  const scopedQueue = getHospitalQueue(state, hospitalId);
+  
+  const todayStr = new Date().toISOString().split("T")[0];
+  const todayAppointments = getAppointmentsByHospital(state, hospitalId).filter(a => 
+    a.appointmentTime?.startsWith(todayStr) &&
+    a.status !== "CANCELLED"
+  );
+  
+  const activeEmergencies = getEmergenciesByHospital(state, hospitalId).filter(r => r.status === "ACTIVE").length;
+  
+  return {
+    hospitalName: state.hospitals.find(h => h.id === hospitalId)?.name || "Hospital",
+    totalWaiting: scopedQueue.filter(q => q.status === "WAITING" || q.status === "CALLED").length,
+    totalServed: scopedQueue.filter(q => q.status === "COMPLETED").length,
+    todayAppointmentsCount: todayAppointments.length,
+    activeEmergencies,
+    activeDoctors: scopedDoctors.filter(d => d.isAvailable).length
+  };
+};
+
+export const getPatientAppointments = (state, patientId) => {
+  return (state.appointments || []).filter(a => 
+    a.patientId === patientId && 
+    (a.status === "BOOKED" || a.status === "SCHEDULED")
+  );
+};
+
+export const getPendingRequestsForPatient = (state, patientId) => {
+  return (state.queueEntries || []).filter(e => 
+    e.patientId === patientId && 
+    e.verificationStatus === "PENDING_VERIFICATION"
+  );
+};
+

@@ -6,10 +6,13 @@ import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Modal } from "../../components/ui/Modal";
 import { Input } from "../../components/ui/Input";
+import { getDoctorsByHospital } from "../../store/selectors";
 
 export const ReceptionDoctors = () => {
   const { state, dispatch } = useQueue();
   const [delayModal, setDelayModal] = useState({ isOpen: false, doctorId: null, minutes: 15 });
+  const hospitalId = state.currentUser?.hospitalId;
+  const hospitalDoctors = getDoctorsByHospital(state, hospitalId);
 
   const handleStatusChange = (doctorId, status) => {
     dispatch({ type: ACTIONS.SET_DOCTOR_STATUS, payload: { doctorId, status } });
@@ -28,7 +31,7 @@ export const ReceptionDoctors = () => {
       <h1 className="text-2xl font-bold text-navy">Doctor Status Management</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {state.doctors.map(doctor => (
+        {hospitalDoctors.map(doctor => (
           <Card key={doctor.id}>
             <CardContent className="p-4">
               <div className="flex justify-between items-start mb-4">

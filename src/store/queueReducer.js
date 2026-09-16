@@ -11,8 +11,10 @@ export const initialState = {
   users: [],
   patients: [],
   hospitals: [],
+  departments: [],
   emergencyRequests: [],
-  departmentStatus: {}
+  departmentStatus: {},
+  qrPoints: []
 };
 
 export const queueReducer = (state, action) => {
@@ -53,6 +55,76 @@ export const queueReducer = (state, action) => {
       }
 
       return { ...state, queueEntries: [...state.queueEntries, newEntry] };
+    }
+    case ACTIONS.CREATE_TOKEN_REQUEST: {
+      const { patientId, doctorId, source, reasonForVisit, appointmentTime } = action.payload;
+      const patient = state.currentUser;
+      const doctor = state.doctors.find(d => d.id === doctorId);
+      
+      const newEntry = {
+        id: action.payload.id || `QR-${Date.now()}`,
+        tokenNumber: null,
+        patientId,
+        patientName: patient?.name || "Unknown",
+        doctorId,
+        departmentId: doctor?.departmentId,
+        hospitalId: doctor?.hospitalId,
+        verificationStatus: "PENDING_VERIFICATION",
+        status: "PENDING",
+        checkedIn: false,
+        priority: "NORMAL",
+        source: source || "PATIENT",
+        appointmentTime: appointmentTime || null,
+        reasonForVisit: reasonForVisit || "",
+        joinedAt: new Date().toISOString()
+      };
+      
+      return { ...state, queueEntries: [...state.queueEntries, newEntry] };
+    }
+    case ACTIONS.VERIFY_TOKEN_REQUEST: {
+      const { entryId } = action.payload;
+      const entry = state.queueEntries.find(e => e.id === entryId);
+      if (!entry || entry.verificationStatus !== "PENDING_VERIFICATION") return state;
+      
+      return {
+        ...state,
+        queueEntries: state.queueEntries.map(e =>
+          e.id === entryId ? { 
+            ...e, 
+            verificationStatus: "VERIFIED", 
+            status: "WAITING",
+            tokenNumber: nextToken(e.doctorId, state.doctors, state.queueEntries),
+            verifiedByUserId: state.currentUser?.id,
+            verifiedAt: new Date().toISOString()
+          } : e
+        )
+      };
+    }
+    case ACTIONS.REJECT_TOKEN_REQUEST: {
+      const { entryId, reason } = action.payload;
+      return {
+        ...state,
+        queueEntries: state.queueEntries.map(e =>
+          e.id === entryId ? { 
+            ...e, 
+            verificationStatus: "REJECTED", 
+            rejectReason: reason 
+          } : e
+        )
+      };
+    }
+    case ACTIONS.CANCEL_TOKEN_REQUEST: {
+      const { entryId } = action.payload;
+      return {
+        ...state,
+        queueEntries: state.queueEntries.map(e =>
+          e.id === entryId ? { 
+            ...e, 
+            verificationStatus: "CANCELLED", 
+            status: "CANCELLED" 
+          } : e
+        )
+      };
     }
     case ACTIONS.CHECK_IN:
       return {
@@ -128,18 +200,45 @@ export const queueReducer = (state, action) => {
               doctorId: toDoctorId,
               departmentId: targetDoctor?.departmentId,
               hospitalId: targetDoctor?.hospitalId,
-              status: "WAITING", // Put them back in waiting state
-              priority: "PRIORITY", // Elevate priority for transfer
-              joinedAt: new Date().toISOString() // Or keep old joinedAt to maintain place? Usually keep old joinedAt is better for fairness, but updating timestamp guarantees they show up if sorting by time. Let's keep original joinedAt but elevate priority.
+              status: "WAITING", 
+              tokenNumber: nextToken(toDoctorId, state.doctors, state.queueEntries),
+              transferredFromDoctorId: e.doctorId,
+              transferredToDoctorId: toDoctorId,
+              transferredAt: new Date().toISOString(),
+              transferredByUserId: state.currentUser?.id
             };
           }
           return e;
         })
       };
     }
-    case ACTIONS.ADD_WALK_IN:
-      // Mostly similar to JOIN_QUEUE but checkedIn is true
-      return state;
+    case ACTIONS.ADD_WALK_IN: {
+      const { patientName, mobile, doctorId, reason, priority } = action.payload;
+      const doctor = state.doctors.find(d => d.id === doctorId);
+      
+      const newEntry = {
+        id: `Q${Date.now()}`,
+        tokenNumber: nextToken(doctorId, state.doctors, state.queueEntries),
+        patientId: `W${Date.now()}`, // Walk-in dummy ID
+        patientName: patientName || "Walk-in Patient",
+        mobile: mobile || "",
+        doctorId,
+        departmentId: doctor?.departmentId,
+        hospitalId: doctor?.hospitalId,
+        verificationStatus: "VERIFIED",
+        status: "WAITING",
+        checkedIn: true,
+        checkedInAt: new Date().toISOString(),
+        priority: priority || "NORMAL",
+        source: "WALK_IN",
+        appointmentTime: null,
+        reasonForVisit: reason || "",
+        joinedAt: new Date().toISOString(),
+        addedByUserId: state.currentUser?.id
+      };
+      
+      return { ...state, queueEntries: [...state.queueEntries, newEntry] };
+    }
     case ACTIONS.SET_DOCTOR_STATUS:
       return {
         ...state,
@@ -183,6 +282,24 @@ export const queueReducer = (state, action) => {
         patients: [...state.patients, patient],
       };
     }
+    case ACTIONS.UPDATE_PATIENT_PROFILE: {
+      const { patientId, updates } = action.payload;
+      return {
+        ...state,
+        patients: state.patients.map(p =>
+          p.id === patientId ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p
+        )
+      };
+    }
+    case ACTIONS.CHANGE_PASSWORD: {
+      const { userId, newPassword } = action.payload;
+      return {
+        ...state,
+        users: state.users.map(u =>
+          u.id === userId ? { ...u, password: newPassword } : u
+        )
+      };
+    }
     case ACTIONS.REGISTER_DOCTOR: {
       const { user, doctor } = action.payload;
       return {
@@ -191,12 +308,71 @@ export const queueReducer = (state, action) => {
         doctors: [...state.doctors, doctor],
       };
     }
+    case ACTIONS.REGISTER_DOCTOR_REQUEST: {
+      const { user, doctor } = action.payload;
+      return {
+        ...state,
+        users: [...state.users, user],
+        doctors: [...state.doctors, doctor],
+        currentUser: user,
+      };
+    }
     case ACTIONS.APPROVE_DOCTOR: {
       const { email } = action.payload;
       return {
         ...state,
         users: state.users.map(u => 
           u.email === email ? { ...u, verified: true } : u
+        )
+      };
+    }
+    case ACTIONS.APPROVE_DOCTOR_REQUEST: {
+      const { doctorId } = action.payload;
+      return {
+        ...state,
+        users: state.users.map(u => 
+          u.id === doctorId ? { ...u, verified: true } : u
+        ),
+        doctors: state.doctors.map(d =>
+          d.id === doctorId ? { 
+            ...d, 
+            verificationStatus: 'VERIFIED',
+            approvedByUserId: state.currentUser?.id,
+            approvedAt: new Date().toISOString()
+          } : d
+        )
+      };
+    }
+    case ACTIONS.REJECT_DOCTOR_REQUEST: {
+      const { doctorId, reason } = action.payload;
+      return {
+        ...state,
+        doctors: state.doctors.map(d =>
+          d.id === doctorId ? { 
+            ...d, 
+            verificationStatus: 'REJECTED', 
+            rejectReason: reason,
+            rejectedByUserId: state.currentUser?.id,
+            rejectedAt: new Date().toISOString()
+          } : d
+        )
+      };
+    }
+    case ACTIONS.REQUEST_DOCTOR_CHANGES: {
+      const { doctorId, message } = action.payload;
+      return {
+        ...state,
+        doctors: state.doctors.map(d =>
+          d.id === doctorId ? { ...d, verificationStatus: 'CHANGES_REQUESTED', changesMessage: message } : d
+        )
+      };
+    }
+    case ACTIONS.UPDATE_DOCTOR_REGISTRATION: {
+      const { doctorId, updates } = action.payload;
+      return {
+        ...state,
+        doctors: state.doctors.map(d =>
+          d.id === doctorId ? { ...d, ...updates, verificationStatus: 'PENDING_VERIFICATION' } : d
         )
       };
     }
@@ -235,6 +411,15 @@ export const queueReducer = (state, action) => {
         ...state,
         appointments: state.appointments.map(a => 
           a.id === appointmentId ? { ...a, status: "CANCELLED" } : a
+        )
+      };
+    }
+    case ACTIONS.UPDATE_APPOINTMENT_STATUS: {
+      const { appointmentId, status } = action.payload;
+      return {
+        ...state,
+        appointments: state.appointments.map(a => 
+          a.id === appointmentId ? { ...a, status } : a
         )
       };
     }

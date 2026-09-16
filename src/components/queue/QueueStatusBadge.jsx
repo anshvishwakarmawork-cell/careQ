@@ -1,16 +1,14 @@
-
 import React from 'react';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { Badge } from '../ui/Badge';
 
-export function cn(...inputs) {
-  return twMerge(clsx(inputs));
-}
-
-export const QueueStatusBadge = ({ className, children, ...props }) => {
+export const QueueStatusBadge = ({ status, className }) => {
+  if (!status) return null;
+  const map = { WAITING: "warning", CALLED: "success", IN_CONSULTATION: "default", SKIPPED: "danger", COMPLETED: "success", CANCELLED: "default" };
+  const variant = map[status] || "default";
+  
   return (
-    <div className={cn("", className)} {...props}>
-      {children || 'QueueStatusBadge'}
-    </div>
+    <Badge variant={variant} className={className}>
+      {status}
+    </Badge>
   );
 };

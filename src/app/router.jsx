@@ -11,6 +11,7 @@ import { TokenScreen } from "../features/patient/TokenScreen";
 import { PatientVisits } from "../features/patient/PatientVisits";
 import { PatientNotifications } from "../features/patient/PatientNotifications";
 import { PatientProfile } from "../features/patient/PatientProfile";
+import { QueueRequestStatus } from "../features/patient/QueueRequestStatus";
 
 import { DoctorLayout } from "../features/doctor/DoctorLayout";
 import { DoctorDashboard } from "../features/doctor/DoctorDashboard";
@@ -25,7 +26,9 @@ import { ReceptionDoctors } from "../features/reception/ReceptionDoctors";
 import { ReceptionAppointments } from "../features/reception/ReceptionAppointments";
 import { ReceptionNotifications } from "../features/reception/ReceptionNotifications";
 import { ReceptionQR } from "../features/reception/ReceptionQR";
-import { ReceptionAnalytics } from "../features/reception/ReceptionAnalytics";
+
+import { TokenVerification } from "../features/reception/TokenVerification";
+import { DoctorVerifications } from "../features/reception/DoctorVerifications";
 
 import { RoleSelection } from "../features/auth/RoleSelection";
 import { PatientRegistration } from "../features/auth/PatientRegistration";
@@ -45,6 +48,7 @@ export const AppRouter = () => {
       <Route path="/verify" element={<VerifyOTP />} />
       <Route path="/doctor/verification" element={<DoctorVerification />} />
       <Route path="/checkin" element={<CheckIn />} />
+      <Route path="/patient/checkin" element={<CheckIn />} />
       
       {/* Patient Routes */}
       <Route path="/patient" element={<RoleGuard allowedRole="PATIENT" />}>
@@ -54,6 +58,7 @@ export const AppRouter = () => {
           <Route path="hospital/:id" element={<HospitalView />} />
           <Route path="doctor/:id" element={<DoctorView />} />
           <Route path="token/:entryId" element={<TokenScreen />} />
+          <Route path="queue-request/:requestId" element={<QueueRequestStatus />} />
           <Route path="visits" element={<PatientVisits />} />
           <Route path="notifications" element={<PatientNotifications />} />
           <Route path="profile" element={<PatientProfile />} />
@@ -77,11 +82,14 @@ export const AppRouter = () => {
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<ReceptionDashboard />} />
           <Route path="queues" element={<ReceptionQueues />} />
+          <Route path="queues/:doctorId" element={<ReceptionQueues />} />
+          <Route path="verification" element={<TokenVerification />} />
+          <Route path="verifications" element={<DoctorVerifications />} />
           <Route path="doctors" element={<ReceptionDoctors />} />
           <Route path="appointments" element={<ReceptionAppointments />} />
           <Route path="notifications" element={<ReceptionNotifications />} />
           <Route path="qr" element={<ReceptionQR />} />
-          <Route path="analytics" element={<ReceptionAnalytics />} />
+          <Route path="analytics" element={<Navigate to="/reception/dashboard#analytics" replace />} />
         </Route>
       </Route>
       

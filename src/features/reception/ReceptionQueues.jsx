@@ -1,17 +1,29 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { useQueue } from "../../store/QueueStore";
 import { Card, CardContent } from "../../components/ui/Card";
 import { QueueTable } from "../../components/queue/QueueTable";
 
 export const ReceptionQueues = () => {
+  const { doctorId } = useParams();
   const { state } = useQueue();
-  const [activeTab, setActiveTab] = useState("ALL");
+  const [activeTab, setActiveTab] = useState(doctorId || "ALL");
+
+  useEffect(() => {
+    if (doctorId) {
+      setActiveTab(doctorId);
+    }
+  }, [doctorId]);
 
   const todayStr = new Date().toISOString().split('T')[0];
-  const todayQueue = state.queueEntries.filter(q => q.joinedAt && q.joinedAt.startsWith(todayStr) && q.status === "WAITING");
+  const hospitalId = state.currentUser?.hospitalId;
+  const hospitalQueue = state.queueEntries.filter(q => q.hospitalId === hospitalId);
+  
+  const todayQueue = hospitalQueue.filter(q => q.joinedAt && q.joinedAt.startsWith(todayStr) && q.status === "WAITING");
   const filteredQueue = activeTab === "ALL" ? todayQueue : todayQueue.filter(q => q.doctorId === activeTab);
   
-  const activeDoctors = state.doctors.filter(d => d.status !== "UNAVAILABLE");
+  const hospitalDoctors = state.doctors.filter(d => d.hospitalId === hospitalId);
+  const activeDoctors = hospitalDoctors.filter(d => d.status !== "UNAVAILABLE");
 
   return (
     <div className="space-y-6">

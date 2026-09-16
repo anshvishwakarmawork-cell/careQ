@@ -1,16 +1,14 @@
-
 import React from 'react';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { Badge } from '../ui/Badge';
 
-export function cn(...inputs) {
-  return twMerge(clsx(inputs));
-}
-
-export const PriorityBadge = ({ className, children, ...props }) => {
+export const PriorityBadge = ({ priority, className }) => {
+  if (!priority) return null;
+  const map = { EMERGENCY: "danger", URGENT: "warning", PRIORITY: "default", NORMAL: "success" };
+  const variant = map[priority] || "default";
+  
   return (
-    <div className={cn("", className)} {...props}>
-      {children || 'PriorityBadge'}
-    </div>
+    <Badge variant={variant} className={className}>
+      {priority}
+    </Badge>
   );
 };

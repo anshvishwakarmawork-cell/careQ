@@ -7,6 +7,7 @@ import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Modal } from "../ui/Modal";
 import { Select } from "../ui/Select";
+import { Toast } from "../ui/Toast";
 
 export function cn(...inputs) {
   return twMerge(clsx(inputs));
@@ -17,12 +18,16 @@ export const QueueTable = ({ entries, showActions = false, className, ...props }
   const [transferModalOpen, setTransferModalOpen] = useState(false);
   const [transferEntry, setTransferEntry] = useState(null);
   const [targetDoctor, setTargetDoctor] = useState("");
+  const [transferError, setTransferError] = useState("");
+  const [transferSuccess, setTransferSuccess] = useState("");
+  const [isTransferring, setIsTransferring] = useState(false);
 
   const activeDoctors = state.doctors.filter(d => d.status !== "UNAVAILABLE");
 
   const openTransfer = (entry) => {
     setTransferEntry(entry);
     setTargetDoctor("");
+    setTransferError("");
     setTransferModalOpen(true);
   };
 
@@ -30,12 +35,41 @@ export const QueueTable = ({ entries, showActions = false, className, ...props }
     e.preventDefault();
     if (!targetDoctor || !transferEntry) return;
 
-    dispatch({
-      type: ACTIONS.TRANSFER,
-      payload: { entryId: transferEntry.id, toDoctorId: targetDoctor }
-    });
-    setTransferModalOpen(false);
-    setTransferEntry(null);
+    if (transferEntry.doctorId === targetDoctor) {
+      setTransferError("Patient is already assigned to this doctor.");
+      return;
+    }
+    
+    if (transferEntry.status === "COMPLETED" || transferEntry.status === "CANCELLED") {
+      setTransferError("Cannot transfer a completed or cancelled patient.");
+      return;
+    }
+
+    if (transferEntry.status === "IN_CONSULTATION") {
+      setTransferError("Cannot automatically transfer a patient currently in consultation.");
+      return;
+    }
+
+    setIsTransferring(true);
+    setTransferError("");
+
+    // Use a small timeout to simulate async behavior and let the "Transferring..." UI show
+    setTimeout(() => {
+      dispatch({
+        type: ACTIONS.TRANSFER,
+        payload: { entryId: transferEntry.id, toDoctorId: targetDoctor }
+      });
+      
+      const targetDoc = state.doctors.find(d => d.id === targetDoctor);
+      setTransferSuccess(`${transferEntry.patientName} was transferred successfully to ${targetDoc.name}.`);
+      
+      // Auto-hide toast after 3 seconds
+      setTimeout(() => setTransferSuccess(""), 3000);
+
+      setIsTransferring(false);
+      setTransferModalOpen(false);
+      setTransferEntry(null);
+    }, 500);
   };
 
   return (
@@ -86,19 +120,37 @@ export const QueueTable = ({ entries, showActions = false, className, ...props }
             </p>
             <div>
               <label className="block text-sm font-medium text-navy mb-1">Select Target Doctor</label>
-              <Select required value={targetDoctor} onChange={(e) => setTargetDoctor(e.target.value)}>
+              <Select required value={targetDoctor} onChange={(e) => {
+                setTargetDoctor(e.target.value);
+                setTransferError(""); // clear error on change
+              }}>
                 <option value="">Select Doctor...</option>
                 {activeDoctors.filter(d => d.id !== transferEntry.doctorId).map(d => (
-                  <option key={d.id} value={d.id}>{d.name} ({d.department})</option>
+                  <option key={d.id} value={d.id}>
+                    {d.name}{d.specialization || d.department ? ` — ${d.specialization || d.department}` : ''}
+                  </option>
                 ))}
               </Select>
+              {transferError && (
+                <p className="text-status-error text-sm mt-2">{transferError}</p>
+              )}
             </div>
             <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => setTransferModalOpen(false)}>Cancel</Button>
-              <Button type="submit">Transfer Patient</Button>
+              <Button type="button" variant="outline" onClick={() => setTransferModalOpen(false)} disabled={isTransferring}>Cancel</Button>
+              <Button type="submit" disabled={isTransferring}>
+                {isTransferring ? 'Transferring...' : 'Transfer Patient'}
+              </Button>
             </div>
           </form>
         </Modal>
+      )}
+
+      {transferSuccess && (
+        <Toast 
+          message={transferSuccess} 
+          type="success" 
+          onClose={() => setTransferSuccess("")} 
+        />
       )}
     </div>
   );

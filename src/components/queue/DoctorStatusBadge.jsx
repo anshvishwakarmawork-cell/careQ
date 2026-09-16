@@ -1,16 +1,19 @@
-
 import React from 'react';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { Badge } from '../ui/Badge';
 
-export function cn(...inputs) {
-  return twMerge(clsx(inputs));
-}
+export const DoctorStatusBadge = ({ doctor, className }) => {
+  if (!doctor) return null;
 
-export const DoctorStatusBadge = ({ className, children, ...props }) => {
-  return (
-    <div className={cn("", className)} {...props}>
-      {children || 'DoctorStatusBadge'}
-    </div>
-  );
+  switch (doctor.status) {
+    case 'AVAILABLE':
+      return <Badge variant="success" className={className}>Available</Badge>;
+    case 'DELAYED':
+      return <Badge variant="warning" className={className}>Delayed {doctor.delayMinutes ? `${doctor.delayMinutes} min` : ''}</Badge>;
+    case 'ON_BREAK':
+      return <Badge variant="default" className={className}>On break</Badge>;
+    case 'UNAVAILABLE':
+      return <Badge variant="danger" className={className}>Unavailable</Badge>;
+    default:
+      return <Badge className={className}>{doctor.status}</Badge>;
+  }
 };

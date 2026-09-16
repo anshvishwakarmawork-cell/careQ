@@ -32,16 +32,18 @@ export const DoctorView = () => {
   const inConsult = state.queueEntries.find(e => e.doctorId === doctor.id && e.status === "IN_CONSULTATION");
 
   const handleJoinQueue = () => {
+    const requestId = `QR-${Date.now()}`;
     dispatch({
-      type: ACTIONS.JOIN_QUEUE,
+      type: ACTIONS.CREATE_TOKEN_REQUEST,
       payload: {
+        id: requestId,
         patientId: currentUser.patientId,
         doctorId: doctor.id,
-        source: "WALK_IN"
+        source: "PATIENT"
       }
     });
     setTimeout(() => {
-       navigate('/patient/dashboard');
+       navigate(`/patient/queue-request/${requestId}`);
     }, 100);
   };
 
@@ -210,7 +212,11 @@ export const DoctorView = () => {
               disabled={isUnavailable || activeEntry}
               onClick={handleJoinQueue}
             >
-              {activeEntry ? "You already have an active token" : "Join Queue"}
+              {activeEntry 
+                ? (activeEntry.verificationStatus === "PENDING_VERIFICATION" 
+                    ? "You already have a queue request waiting for verification" 
+                    : "You already have an active token") 
+                : "Join Queue"}
             </button>
           </div>
         </div>

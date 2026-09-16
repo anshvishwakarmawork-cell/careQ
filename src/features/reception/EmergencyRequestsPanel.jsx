@@ -5,12 +5,15 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 import { Button } from '../../components/ui/Button';
 import { AlertTriangle, Clock, Phone, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
 import { Badge } from '../../components/ui/Badge';
+import { getEmergenciesByHospital } from '../../store/selectors';
 
 export const EmergencyRequestsPanel = () => {
   const { state, dispatch } = useQueue();
+  const hospitalId = state.currentUser?.hospitalId;
   
-  // Show all requests that are not fully completed/rejected
-  const activeRequests = state.emergencyRequests.filter(r => 
+  // Show all requests that are not fully completed/rejected and belong to the current hospital
+  const hospitalEmergencies = getEmergenciesByHospital(state, hospitalId);
+  const activeRequests = hospitalEmergencies.filter(r => 
     !['COMPLETED', 'REJECTED_OR_REDIRECTED'].includes(r.status)
   ).sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
 

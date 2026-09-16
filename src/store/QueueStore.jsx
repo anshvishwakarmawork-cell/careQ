@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback } from "react";
 import { queueReducer, initialState as emptyState } from "./queueReducer";
 import { doctors } from "../data/doctors";
-import { queueEntries } from "../data/queue";
+import { queueEntries, qrPoints } from "../data/queue";
 import { appointments } from "../data/appointments";
+import { notifications as initialNotifications } from "../data/notifications";
 import { users as initialUsers } from "../data/users";
 import { patients as initialPatients } from "../data/patients";
 import { hospitals as initialHospitals } from "../data/hospitals";
@@ -10,6 +11,7 @@ import { runNotificationEffects } from "./notificationsEffect";
 import { initWebSocket, disconnectWebSocket } from "./socket";
 import { api } from "./api";
 import { ACTIONS } from "./actions";
+import { departments as initialDepartments } from "../data/departments";
 
 const QueueContext = createContext();
 
@@ -25,7 +27,9 @@ export const QueueProvider = ({ children }) => {
     users: initialUsers,
     patients: initialPatients,
     hospitals: initialHospitals,
-    notifications: []
+    departments: initialDepartments,
+    qrPoints: useMock ? qrPoints : [],
+    notifications: useMock ? initialNotifications : []
   };
 
   const [state, baseDispatch] = useReducer(queueReducer, initialState);

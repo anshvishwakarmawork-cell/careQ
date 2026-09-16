@@ -18,6 +18,11 @@ export const Login = () => {
   const [error, setError] = useState("");
 
   const handleLogin = (user) => {
+    if (user.status === "INACTIVE") {
+      setError("Account Access Disabled. Your CareQueue staff account is currently inactive. Please contact your hospital administrator or CareQueue support.");
+      return;
+    }
+
     if (user.role === "DOCTOR" && user.verified === false) {
       // Mock login for unverified doctors lands on verification page
       dispatch({ type: ACTIONS.LOGIN, payload: user });
