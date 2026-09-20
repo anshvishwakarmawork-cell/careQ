@@ -1,5 +1,5 @@
 import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { Login } from "../features/auth/Login";
 import { RoleGuard } from "./RoleGuard";
 import { PatientLayout } from "../features/patient/PatientLayout";
@@ -36,11 +36,23 @@ import { DoctorRegistration } from "../features/auth/DoctorRegistration";
 import { VerifyOTP } from "../features/auth/VerifyOTP";
 import { DoctorVerification } from "../features/auth/DoctorVerification";
 import { CheckIn } from "../features/patient/CheckIn";
+import CareQueueLanding from "../components/landing/CareQueueLanding";
+
+const WelcomePage = () => {
+  const navigate = useNavigate();
+  return (
+    <CareQueueLanding
+      onGetStarted={() => navigate("/register")}
+      onLogin={() => navigate("/login")}
+      onStaff={() => navigate("/login")}
+    />
+  );
+};
 
 export const AppRouter = () => {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/" element={<WelcomePage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<RoleSelection />} />
       <Route path="/register/patient" element={<PatientRegistration />} />
