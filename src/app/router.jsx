@@ -43,6 +43,22 @@ import { DoctorRegistration } from "../features/auth/DoctorRegistration";
 import { VerifyOTP } from "../features/auth/VerifyOTP";
 import { DoctorVerification } from "../features/auth/DoctorVerification";
 import { CheckIn } from "../features/patient/CheckIn";
+import CareQueueLanding from "../components/landing/CareQueueLanding";
+
+const WelcomePage = () => {
+  const navigate = useNavigate();
+
+  return (
+    <CareQueueLanding
+      onGetCareQueue={() => navigate("/carequeue-app")}
+      onDoctorPortal={() => navigate("/login?portal=doctor")}
+      onReceptionPortal={() => navigate("/login?portal=reception")}
+      doctorHref="/login?portal=doctor"
+      receptionHref="/login?portal=reception"
+      getCareQueueHref="/carequeue-app"
+    />
+  );
+};
 
 import CareQueueWelcome from "../components/welcome/CareQueueWelcome";
 
@@ -61,20 +77,27 @@ const WelcomePreview = () => {
 export const AppRouter = () => {
   return (
     <Routes>
-      {/* CareQueue Screen Preview */}
+      <Route path="/" element={<WelcomePage />} />
 
-<Route path="/" element={<WelcomePreview />} />
-<Route path="/welcome-preview" element={<WelcomePreview />} />
+      <Route
+        path="/carequeue-app"
+        element={<WelcomePreview />}
+      />
 
-<Route path="/login" element={<Login />} />
+      <Route
+        path="/welcome-preview"
+        element={<WelcomePreview />}
+      />
 
-<Route path="/register" element={<RoleSelection />} />
+      <Route path="/login" element={<Login />} />
 
-<Route
-  path="/register/patient"
-  element={<PatientRegistration />}
-/>
-     
+      <Route path="/register" element={<RoleSelection />} />
+
+      <Route
+        path="/register/patient"
+        element={<PatientRegistration />}
+      />
+
       <Route
         path="/register/doctor"
         element={<DoctorRegistration />}
