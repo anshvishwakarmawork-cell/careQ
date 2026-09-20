@@ -50,12 +50,9 @@ const WelcomePage = () => {
 
   return (
     <CareQueueLanding
-      onGetCareQueue={() => navigate("/carequeue-app")}
-      onDoctorPortal={() => navigate("/login?portal=doctor")}
-      onReceptionPortal={() => navigate("/login?portal=reception")}
-      doctorHref="/login?portal=doctor"
-      receptionHref="/login?portal=reception"
-      getCareQueueHref="/carequeue-app"
+      onGetStarted={() => navigate("/carequeue-app")}
+      onLogin={() => navigate("/login")}
+      onStaff={(role) => navigate(`/login?portal=${role}`)}
     />
   );
 };
