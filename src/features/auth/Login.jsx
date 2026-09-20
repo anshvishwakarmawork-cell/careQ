@@ -12,6 +12,8 @@ export const Login = () => {
   const { state, dispatch } = useQueue();
   const navigate = useNavigate();
   const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const portal = params.get("portal");
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -57,8 +59,18 @@ export const Login = () => {
       <SiteHeader />
       <div className="min-h-[calc(100vh-80px)] flex flex-col items-center justify-center p-4">
         <div className="max-w-md w-full bg-white/90 backdrop-blur-md rounded-xl p-8 shadow-xl border border-[#E2E8F0] relative z-10">
-          <div className="flex justify-center mb-8">
+          <div className="flex flex-col items-center justify-center mb-8">
             <CareQueueLogo variant="horizontal" animated={false} />
+            {portal === "doctor" && (
+              <span className="mt-4 px-3 py-1 bg-[#F0F9FF] text-[#0066FF] rounded-full text-sm font-medium border border-[#0066FF]/20">
+                Doctor Portal
+              </span>
+            )}
+            {portal === "reception" && (
+              <span className="mt-4 px-3 py-1 bg-[#F0FDF4] text-[#22C55E] rounded-full text-sm font-medium border border-[#22C55E]/20">
+                Reception Portal
+              </span>
+            )}
           </div>
         
         <form onSubmit={onSubmit} className="space-y-4 mb-8">
@@ -67,7 +79,7 @@ export const Login = () => {
             type="email" 
             value={email} 
             onChange={(e) => setEmail(e.target.value)} 
-            placeholder="patient@demo.com"
+            placeholder="patient@carequeue.com"
           />
           <Input 
             label="Password" 
@@ -82,7 +94,13 @@ export const Login = () => {
 
         <div className="space-y-4">
           <p className="text-sm text-muted mb-2">Demo Accounts:</p>
-          {state.users.map(u => (
+          {state.users
+            .filter((u) => {
+              if (portal === "doctor") return u.role === "DOCTOR";
+              if (portal === "reception") return u.role === "RECEPTION";
+              return true;
+            })
+            .map(u => (
             <div key={u.id} className="flex items-center justify-between p-3 border rounded-lg">
               <div>
                 <p className="font-semibold">{u.name}</p>

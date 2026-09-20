@@ -13,6 +13,7 @@ export const CheckIn = () => {
   const { currentUser } = state;
   const [status, setStatus] = useState("loading");
   const [activeEntry, setActiveEntry] = useState(null);
+  const [matchedAppointment, setMatchedAppointment] = useState(null);
   const [doctorInfo, setDoctorInfo] = useState(null);
   const [hospitalInfo, setHospitalInfo] = useState(null);
   const [departmentInfo, setDepartmentInfo] = useState(null);
@@ -35,12 +36,37 @@ export const CheckIn = () => {
 
     const entry = getActiveEntryForPatient(state, currentUser.patientId);
     
-    if (!entry) {
+    // Check for a valid appointment today if no entry exists
+    const today = new Date().toISOString().split('T')[0];
+    let appointment = null;
+    
+    if (!entry && state.appointments) {
+      const todaysAppointments = state.appointments.filter(a => 
+        a.patientId === currentUser.patientId && 
+        (a.date === today || (a.appointmentTime && a.appointmentTime.startsWith(today))) &&
+        (a.status === "SCHEDULED" || a.status === "BOOKED")
+      );
+      
+      // Try to find one that exactly matches the scanned QR code
+      appointment = todaysAppointments.find(a => {
+        const doctor = state.doctors.find(d => d.id === a.doctorId);
+        const matchesHospital = qrHospitalId ? doctor?.hospitalId === qrHospitalId : true;
+        const matchesDept = qrDepartmentId ? doctor?.departmentId === qrDepartmentId : true;
+        return matchesHospital && matchesDept;
+      });
+      
+      // If none match exactly, just take the first one (it will fail the mismatch check below)
+      if (!appointment && todaysAppointments.length > 0) {
+        appointment = todaysAppointments[0];
+      }
+    }
+    
+    if (!entry && !appointment) {
       setStatus("no_appointment");
       return;
     }
 
-    const doctor = state.doctors.find(d => d.id === entry.doctorId);
+    const doctor = state.doctors.find(d => d.id === (entry ? entry.doctorId : appointment.doctorId));
     const hospital = state.hospitals.find(h => h.id === doctor?.hospitalId);
     const department = state.departments.find(d => d.id === doctor?.departmentId);
     
@@ -71,14 +97,18 @@ export const CheckIn = () => {
       return;
     }
 
-    if (entry.checkedIn) {
+    if (entry && entry.checkedIn) {
       setStatus("already_checked_in");
       setTimeout(() => navigate(`/patient/token/${entry.id}`), 3000);
       return;
     }
 
     // Passed validation
-    setActiveEntry(entry);
+    if (entry) {
+      setActiveEntry(entry);
+    } else if (appointment) {
+      setMatchedAppointment(appointment);
+    }
     setDoctorInfo(doctor);
     setHospitalInfo(hospital);
     setDepartmentInfo(department);
@@ -89,11 +119,19 @@ export const CheckIn = () => {
   const handleConfirmCheckIn = () => {
     setStatus("processing");
     setTimeout(() => {
-      dispatch({ type: ACTIONS.CHECK_IN, payload: { entryId: activeEntry.id } });
-      setStatus("success");
-      setTimeout(() => {
-        navigate(`/patient/token/${activeEntry.id}`);
-      }, 2000);
+      if (activeEntry) {
+        dispatch({ type: ACTIONS.CHECK_IN, payload: { entryId: activeEntry.id } });
+        setStatus("success");
+        setTimeout(() => {
+          navigate(`/patient/token/${activeEntry.id}`);
+        }, 2000);
+      } else if (matchedAppointment) {
+        dispatch({ type: ACTIONS.UPDATE_APPOINTMENT_STATUS, payload: { appointmentId: matchedAppointment.id, status: 'CHECKED_IN' } });
+        setStatus("success");
+        setTimeout(() => {
+          navigate(`/patient/dashboard`);
+        }, 2000);
+      }
     }, 1000);
   };
 

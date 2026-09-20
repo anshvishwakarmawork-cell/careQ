@@ -1,8 +1,8 @@
 export const users = [
   {
     id: "U1",
-    email: "patient@demo.com",
-    password: "demo",
+    email: "patient@carequeue.com",
+    password: "password",
     role: "PATIENT",
     patientId: "P3", // Linked to "Ansh"
     name: "Ansh"

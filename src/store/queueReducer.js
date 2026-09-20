@@ -98,11 +98,21 @@ export const queueReducer = (state, action) => {
             verifiedByUserId: state.currentUser?.id,
             verifiedAt: new Date().toISOString()
           } : e
-        )
+        ),
+        notifications: [{
+          id: `N${Date.now()}`,
+          userId: entry.patientId,
+          entryId,
+          type: "VERIFIED",
+          message: "Your queue request has been verified and approved.",
+          read: false,
+          createdAt: new Date().toISOString()
+        }, ...state.notifications]
       };
     }
     case ACTIONS.REJECT_TOKEN_REQUEST: {
       const { entryId, reason } = action.payload;
+      const entry = state.queueEntries.find(e => e.id === entryId);
       return {
         ...state,
         queueEntries: state.queueEntries.map(e =>
@@ -111,7 +121,16 @@ export const queueReducer = (state, action) => {
             verificationStatus: "REJECTED", 
             rejectReason: reason 
           } : e
-        )
+        ),
+        notifications: entry ? [{
+          id: `N${Date.now()}`,
+          userId: entry.patientId,
+          entryId,
+          type: "REJECTED",
+          message: `Your queue request was rejected: ${reason}`,
+          read: false,
+          createdAt: new Date().toISOString()
+        }, ...state.notifications] : state.notifications
       };
     }
     case ACTIONS.CANCEL_TOKEN_REQUEST: {
@@ -136,6 +155,7 @@ export const queueReducer = (state, action) => {
       };
     case ACTIONS.CALL_NEXT: {
       const { doctorId } = action.payload;
+      const entry = state.queueEntries.find(e => e.id === action.payload.entryId);
       return {
         ...state,
         queueEntries: state.queueEntries.map(e => {
@@ -143,23 +163,54 @@ export const queueReducer = (state, action) => {
              return { ...e, status: "CALLED", calledAt: new Date().toISOString() };
           }
           return e;
-        })
+        }),
+        notifications: entry ? [{
+          id: `N${Date.now()}`,
+          userId: entry.patientId,
+          entryId: entry.id,
+          type: "CALLED",
+          message: "The doctor is calling you now. Please proceed to the room.",
+          read: false,
+          createdAt: new Date().toISOString()
+        }, ...state.notifications] : state.notifications
       };
     }
-    case ACTIONS.START_CONSULTATION:
+    case ACTIONS.START_CONSULTATION: {
+      const entry = state.queueEntries.find(e => e.id === action.payload.entryId);
       return {
         ...state,
         queueEntries: state.queueEntries.map(e =>
           e.id === action.payload.entryId ? { ...e, status: "IN_CONSULTATION", startedAt: new Date().toISOString() } : e
-        )
+        ),
+        notifications: entry ? [{
+          id: `N${Date.now()}`,
+          userId: entry.patientId,
+          entryId: entry.id,
+          type: "IN_CONSULTATION",
+          message: "Your consultation has started.",
+          read: false,
+          createdAt: new Date().toISOString()
+        }, ...state.notifications] : state.notifications
       };
-    case ACTIONS.COMPLETE:
+    }
+    case ACTIONS.COMPLETE: {
+      const entry = state.queueEntries.find(e => e.id === action.payload.entryId);
       return {
         ...state,
         queueEntries: state.queueEntries.map(e =>
           e.id === action.payload.entryId ? { ...e, status: "COMPLETED", completedAt: new Date().toISOString() } : e
-        )
+        ),
+        notifications: entry ? [{
+          id: `N${Date.now()}`,
+          userId: entry.patientId,
+          entryId: entry.id,
+          type: "COMPLETED",
+          message: "Your consultation is complete. Have a great day!",
+          read: false,
+          createdAt: new Date().toISOString()
+        }, ...state.notifications] : state.notifications
       };
+    }
     case ACTIONS.SKIP:
       return {
         ...state,
@@ -449,11 +500,26 @@ export const queueReducer = (state, action) => {
     }
     case ACTIONS.UPDATE_APPOINTMENT_STATUS: {
       const { appointmentId, status } = action.payload;
+      const appointment = state.appointments.find(a => a.id === appointmentId);
+      
+      const newNotifications = (status === "CHECKED_IN" && appointment) 
+        ? [{
+            id: `N${Date.now()}`,
+            userId: appointment.patientId,
+            appointmentId: appointment.id,
+            type: "CHECKED_IN",
+            message: "You have successfully checked in for your appointment.",
+            read: false,
+            createdAt: new Date().toISOString()
+          }, ...state.notifications]
+        : state.notifications;
+        
       return {
         ...state,
         appointments: state.appointments.map(a => 
           a.id === appointmentId ? { ...a, status } : a
-        )
+        ),
+        notifications: newNotifications
       };
     }
     case ACTIONS.SUBMIT_EMERGENCY_REQUEST: {
