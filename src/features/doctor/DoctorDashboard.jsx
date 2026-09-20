@@ -118,18 +118,41 @@ export const DoctorDashboard = () => {
         </div>
       </div>
 
-      {isEmergencyPrepActive && (
-        <div className="bg-red-600 text-white p-4 rounded-xl shadow-md flex items-start gap-4 animate-pulse">
-          <AlertTriangle className="shrink-0 mt-1" size={28} />
-          <div>
-            <h2 className="text-xl font-bold mb-1">EMERGENCY PREPARATION ACTIVE</h2>
-            <p className="font-medium text-red-100">
-              An incoming emergency request has been accepted for your department. Normal queue advancement is paused. 
-              Please finish your current consultation and prepare for the incoming patient.
-            </p>
+      {state.emergencyRequests
+        .filter(req => req.doctorId === doctorId && ['ACCEPTED', 'PATIENT_EN_ROUTE', 'ARRIVED', 'HANDED_TO_DOCTOR'].includes(req.status))
+        .map(req => (
+          <div key={req.id} className="bg-red-600 text-white p-4 rounded-xl shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in slide-in-from-top">
+            <div className="flex items-start gap-4">
+              <AlertTriangle className="shrink-0 mt-1 animate-pulse" size={28} />
+              <div>
+                <h2 className="text-xl font-bold mb-1">EMERGENCY: {req.status.replace(/_/g, ' ')}</h2>
+                <p className="font-medium text-red-100 mb-2">
+                  Patient: {req.patientName} • Mobile: {req.mobile}
+                </p>
+                <p className="text-sm text-red-100 max-w-2xl">
+                  {req.emergencyType} - {req.description} (Conscious: {req.conscious}, Breathing: {req.breathing})
+                </p>
+              </div>
+            </div>
+            {req.status === 'HANDED_TO_DOCTOR' && (
+              <Button 
+                onClick={() => {
+                  dispatch({
+                    type: ACTIONS.UPDATE_EMERGENCY_STATUS,
+                    payload: { requestId: req.id, status: 'RESOLVED', resolutionType: 'COMPLETED' }
+                  });
+                  dispatch({
+                    type: ACTIONS.RESUME_NORMAL_QUEUE,
+                    payload: { departmentId: doctor.departmentId, requestIdToIgnore: req.id }
+                  });
+                }}
+                className="bg-white text-red-700 hover:bg-red-50 shrink-0 font-bold px-6"
+              >
+                Resolve Emergency
+              </Button>
+            )}
           </div>
-        </div>
-      )}
+      ))}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

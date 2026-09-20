@@ -333,12 +333,22 @@ export const queueReducer = (state, action) => {
           n.id === action.payload.id ? { ...n, popupSeen: true } : n
         )
       };
-    case ACTIONS.CREATE_BROADCAST:
+    case ACTIONS.CREATE_BROADCAST: {
+      const senderHospitalId = state.currentUser?.hospitalId;
+      const broadcastHospitalId = action.payload.broadcast?.hospitalId;
+      
+      // Cross-Hospital Protection: Ensure sender can only broadcast for their own hospital.
+      if (senderHospitalId && broadcastHospitalId && senderHospitalId !== broadcastHospitalId) {
+        console.error(`CROSS-HOSPITAL ISOLATION VIOLATION: Sender in hospital ${senderHospitalId} attempted to broadcast to hospital ${broadcastHospitalId}`);
+        return state;
+      }
+      
       return {
         ...state,
         broadcasts: [action.payload.broadcast, ...state.broadcasts],
         notifications: [...action.payload.targetedNotifications, ...state.notifications]
       };
+    }
     case ACTIONS.BULK_RESCHEDULE_APPOINTMENTS: {
       const { appointmentIds, newDate, newTime, status } = action.payload;
       return {
@@ -524,17 +534,37 @@ export const queueReducer = (state, action) => {
     }
     case ACTIONS.SUBMIT_EMERGENCY_REQUEST: {
       const { request } = action.payload;
+      // Emergency Duplicate Protection
+      const existingActive = state.emergencyRequests.find(r => r.patientId === request.patientId && r.status !== 'RESOLVED');
+      if (existingActive) {
+        console.warn(`DUPLICATE EMERGENCY BLOCKED: Patient ${request.patientId} already has an active emergency request.`);
+        return state;
+      }
       return {
         ...state,
         emergencyRequests: [...state.emergencyRequests, { ...request, status: "AWAITING_REVIEW", submittedAt: new Date().toISOString() }]
       };
     }
     case ACTIONS.UPDATE_EMERGENCY_STATUS: {
-      const { requestId, status } = action.payload;
+      const { requestId, status, resolutionType } = action.payload;
+      const requestToUpdate = state.emergencyRequests.find(r => r.id === requestId);
+      const senderHospitalId = state.currentUser?.hospitalId;
+      
+      // Cross-Hospital Protection for Receptionists/Doctors
+      if (senderHospitalId && requestToUpdate && requestToUpdate.hospitalId !== senderHospitalId) {
+        console.error(`CROSS-HOSPITAL ISOLATION VIOLATION: User in hospital ${senderHospitalId} attempted to update emergency ${requestId} for hospital ${requestToUpdate.hospitalId}`);
+        return state;
+      }
+
       return {
         ...state,
         emergencyRequests: state.emergencyRequests.map(r => 
-          r.id === requestId ? { ...r, status, lastUpdated: new Date().toISOString() } : r
+          r.id === requestId ? { 
+            ...r, 
+            status, 
+            lastUpdated: new Date().toISOString(),
+            ...(resolutionType ? { resolutionType, resolvedAt: new Date().toISOString() } : {})
+          } : r
         )
       };
     }
@@ -549,7 +579,17 @@ export const queueReducer = (state, action) => {
       };
     }
     case ACTIONS.RESUME_NORMAL_QUEUE: {
-      const { departmentId } = action.payload;
+      const { departmentId, requestIdToIgnore } = action.payload;
+      const otherActiveEmergencies = state.emergencyRequests.some(r => 
+        r.departmentId === departmentId && 
+        r.id !== requestIdToIgnore && 
+        ['ACCEPTED', 'PATIENT_EN_ROUTE', 'ARRIVED', 'HANDED_TO_DOCTOR'].includes(r.status)
+      );
+
+      if (otherActiveEmergencies) {
+        return state;
+      }
+
       const newStatus = { ...state.departmentStatus };
       delete newStatus[departmentId];
       return {

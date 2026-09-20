@@ -5,7 +5,7 @@ import { ACTIONS } from "../../store/actions";
 import { getActiveEntryForPatient, getPatientsAhead, getEstimatedWait, getPatientAppointments, getPendingRequestsForPatient, getUnreadCount } from "../../store/selectors";
 import { formatWaitTime, formatHumanReadableDate, formatQueueStatus, formatDoctorName } from "../../lib/format";
 import { Card } from "../../components/ui/Card";
-import { Search, Bell, Users, Calendar, QrCode, User, LogOut, Settings, Clock, MapPin, AlertCircle } from "lucide-react";
+import { Search, Bell, Users, Calendar, QrCode, User, LogOut, Settings, Clock, MapPin, AlertCircle, AlertTriangle } from "lucide-react";
 
 export const PatientDashboard = () => {
   const { state, dispatch } = useQueue();
@@ -35,6 +35,9 @@ export const PatientDashboard = () => {
   const nextAppointment = myAppointments[0];
 
   const unreadNotifications = getUnreadCount(state, currentUser.patientId);
+  const activeEmergencies = state.emergencyRequests?.filter(req => 
+    req.patientId === currentUser.patientId && req.status !== 'RESOLVED'
+  ) || [];
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -122,6 +125,26 @@ export const PatientDashboard = () => {
           className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-navy"
         />
       </form>
+
+      {/* Emergency Banners */}
+      {activeEmergencies.map(req => (
+        <Card key={req.id} className="bg-red-600 text-white p-4 rounded-xl flex justify-between items-center animate-in slide-in-from-top">
+          <div className="flex gap-3 items-start">
+            <AlertTriangle className="text-white shrink-0 mt-0.5 animate-pulse" size={24} />
+            <div>
+              <p className="font-bold text-lg">EMERGENCY: {req.status.replace(/_/g, ' ')}</p>
+              <p className="text-red-100 font-medium mt-1">
+                {req.status === 'AWAITING_REVIEW' && "Reception is reviewing your emergency request."}
+                {req.status === 'UNDER_REVIEW' && "Reception is currently processing your request."}
+                {req.status === 'ACCEPTED' && "Your request has been approved. Please follow instructions."}
+                {req.status === 'PATIENT_EN_ROUTE' && "Please proceed to the doctor's room immediately."}
+                {req.status === 'ARRIVED' && "You have arrived. Waiting for the doctor to receive you."}
+                {req.status === 'HANDED_TO_DOCTOR' && "You are now under the doctor's care."}
+              </p>
+            </div>
+          </div>
+        </Card>
+      ))}
 
       {/* Pending Verification Banner */}
       {pendingRequests.length > 0 && !activeEntry && (

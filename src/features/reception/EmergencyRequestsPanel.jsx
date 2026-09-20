@@ -14,15 +14,30 @@ export const EmergencyRequestsPanel = () => {
   // Show all requests that are not fully completed/rejected and belong to the current hospital
   const hospitalEmergencies = getEmergenciesByHospital(state, hospitalId);
   const activeRequests = hospitalEmergencies.filter(r => 
-    !['COMPLETED', 'REJECTED_OR_REDIRECTED'].includes(r.status)
+    r.status !== 'RESOLVED'
   ).sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
 
-  if (activeRequests.length === 0) return null;
+  if (activeRequests.length === 0) {
+    return (
+      <div className="space-y-4 mb-8">
+        <h2 className="text-xl font-bold text-red-700 flex items-center gap-2">
+          <AlertTriangle />
+          Active Emergency Requests
+        </h2>
+        <Card className="border-dashed border-2 border-gray-200 bg-gray-50">
+          <CardContent className="p-8 text-center text-gray-500">
+            <CheckCircle className="mx-auto mb-2 text-gray-300" size={32} />
+            <p>No active emergency requests.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-  const handleUpdateStatus = (requestId, status, departmentId) => {
+  const handleUpdateStatus = (requestId, status, departmentId, resolutionType = null) => {
     dispatch({
       type: ACTIONS.UPDATE_EMERGENCY_STATUS,
-      payload: { requestId, status }
+      payload: { requestId, status, resolutionType }
     });
 
     if (status === 'ACCEPTED') {
@@ -32,10 +47,10 @@ export const EmergencyRequestsPanel = () => {
       });
     }
 
-    if (status === 'COMPLETED' || status === 'REJECTED_OR_REDIRECTED') {
+    if (status === 'RESOLVED') {
       dispatch({
         type: ACTIONS.RESUME_NORMAL_QUEUE,
-        payload: { departmentId }
+        payload: { departmentId, requestIdToIgnore: requestId }
       });
     }
   };
@@ -48,6 +63,7 @@ export const EmergencyRequestsPanel = () => {
       case 'PATIENT_EN_ROUTE': return <Badge variant="info">En Route</Badge>;
       case 'ARRIVED': return <Badge variant="success">Arrived</Badge>;
       case 'HANDED_TO_DOCTOR': return <Badge variant="success">Handed to Doc</Badge>;
+      case 'RESOLVED': return <Badge variant="success">Resolved</Badge>;
       default: return <Badge>{status}</Badge>;
     }
   };
@@ -107,7 +123,7 @@ export const EmergencyRequestsPanel = () => {
                   )}
                   {req.status === 'UNDER_REVIEW' && (
                     <>
-                      <Button size="sm" variant="outline" className="text-red-700 border-red-200" onClick={() => handleUpdateStatus(req.id, 'REJECTED_OR_REDIRECTED', req.departmentId)}>Reject / Redirect</Button>
+                      <Button size="sm" variant="outline" className="text-red-700 border-red-200" onClick={() => handleUpdateStatus(req.id, 'RESOLVED', req.departmentId, 'REJECTED_OR_REDIRECTED')}>Reject / Redirect</Button>
                       <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white" onClick={() => handleUpdateStatus(req.id, 'ACCEPTED', req.departmentId)}>Accept & Prep Dept</Button>
                     </>
                   )}
@@ -121,7 +137,7 @@ export const EmergencyRequestsPanel = () => {
                     <Button size="sm" className="bg-purple-600 hover:bg-purple-700 text-white" onClick={() => handleUpdateStatus(req.id, 'HANDED_TO_DOCTOR', req.departmentId)}>Hand to Doctor</Button>
                   )}
                   {req.status === 'HANDED_TO_DOCTOR' && (
-                    <Button size="sm" variant="outline" onClick={() => handleUpdateStatus(req.id, 'COMPLETED', req.departmentId)}>Complete Workflow</Button>
+                    <Button size="sm" variant="outline" onClick={() => handleUpdateStatus(req.id, 'RESOLVED', req.departmentId, 'COMPLETED')}>Complete Workflow</Button>
                   )}
                 </div>
               </CardContent>
