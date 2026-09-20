@@ -1,7 +1,14 @@
 import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import {
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+} from "react-router-dom";
+
 import { Login } from "../features/auth/Login";
 import { RoleGuard } from "./RoleGuard";
+
 import { PatientLayout } from "../features/patient/PatientLayout";
 import { PatientDashboard } from "../features/patient/PatientDashboard";
 import { PatientSearch } from "../features/patient/PatientSearch";
@@ -37,38 +44,83 @@ import { VerifyOTP } from "../features/auth/VerifyOTP";
 import { DoctorVerification } from "../features/auth/DoctorVerification";
 import { CheckIn } from "../features/patient/CheckIn";
 
+import CareQueueWelcome from "../components/welcome/CareQueueWelcome";
+
+const WelcomePreview = () => {
+  const navigate = useNavigate();
+
+  return (
+    <CareQueueWelcome
+      onGetStarted={() => navigate("/register/patient")}
+      onLogin={() => navigate("/login")}
+      onStaff={() => navigate("/login")}
+    />
+  );
+};
+
 export const AppRouter = () => {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<RoleSelection />} />
-      <Route path="/register/patient" element={<PatientRegistration />} />
-      <Route path="/register/doctor" element={<DoctorRegistration />} />
+      {/* CareQueue Screen Preview */}
+
+<Route path="/" element={<WelcomePreview />} />
+<Route path="/welcome-preview" element={<WelcomePreview />} />
+
+<Route path="/login" element={<Login />} />
+
+<Route path="/register" element={<RoleSelection />} />
+
+<Route
+  path="/register/patient"
+  element={<PatientRegistration />}
+/>
+     
+      <Route
+        path="/register/doctor"
+        element={<DoctorRegistration />}
+      />
       <Route path="/verify" element={<VerifyOTP />} />
-      <Route path="/doctor/verification" element={<DoctorVerification />} />
+      <Route
+        path="/doctor/verification"
+        element={<DoctorVerification />}
+      />
       <Route path="/checkin" element={<CheckIn />} />
       <Route path="/patient/checkin" element={<CheckIn />} />
-      
+
       {/* Patient Routes */}
-      <Route path="/patient" element={<RoleGuard allowedRole="PATIENT" />}>
+      <Route
+        path="/patient"
+        element={<RoleGuard allowedRole="PATIENT" />}
+      >
         <Route element={<PatientLayout />}>
           <Route path="dashboard" element={<PatientDashboard />} />
           <Route path="search" element={<PatientSearch />} />
           <Route path="hospital/:id" element={<HospitalView />} />
           <Route path="doctor/:id" element={<DoctorView />} />
           <Route path="token/:entryId" element={<TokenScreen />} />
-          <Route path="queue-request/:requestId" element={<QueueRequestStatus />} />
+          <Route
+            path="queue-request/:requestId"
+            element={<QueueRequestStatus />}
+          />
           <Route path="visits" element={<PatientVisits />} />
-          <Route path="notifications" element={<PatientNotifications />} />
+          <Route
+            path="notifications"
+            element={<PatientNotifications />}
+          />
           <Route path="profile" element={<PatientProfile />} />
         </Route>
       </Route>
 
       {/* Doctor Routes */}
-      <Route path="/doctor" element={<RoleGuard allowedRole="DOCTOR" />}>
+      <Route
+        path="/doctor"
+        element={<RoleGuard allowedRole="DOCTOR" />}
+      >
         <Route element={<DoctorLayout />}>
-          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route
+            index
+            element={<Navigate to="dashboard" replace />}
+          />
           <Route path="dashboard" element={<DoctorDashboard />} />
           <Route path="queue" element={<DoctorQueue />} />
           <Route path="patients" element={<DoctorPatients />} />
@@ -77,22 +129,57 @@ export const AppRouter = () => {
       </Route>
 
       {/* Reception Routes */}
-      <Route path="/reception" element={<RoleGuard allowedRole="RECEPTION" />}>
+      <Route
+        path="/reception"
+        element={<RoleGuard allowedRole="RECEPTION" />}
+      >
         <Route element={<ReceptionLayout />}>
-          <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<ReceptionDashboard />} />
+          <Route
+            index
+            element={<Navigate to="dashboard" replace />}
+          />
+          <Route
+            path="dashboard"
+            element={<ReceptionDashboard />}
+          />
           <Route path="queues" element={<ReceptionQueues />} />
-          <Route path="queues/:doctorId" element={<ReceptionQueues />} />
-          <Route path="verification" element={<TokenVerification />} />
-          <Route path="verifications" element={<DoctorVerifications />} />
-          <Route path="doctors" element={<ReceptionDoctors />} />
-          <Route path="appointments" element={<ReceptionAppointments />} />
-          <Route path="notifications" element={<ReceptionNotifications />} />
+          <Route
+            path="queues/:doctorId"
+            element={<ReceptionQueues />}
+          />
+          <Route
+            path="verification"
+            element={<TokenVerification />}
+          />
+          <Route
+            path="verifications"
+            element={<DoctorVerifications />}
+          />
+          <Route
+            path="doctors"
+            element={<ReceptionDoctors />}
+          />
+          <Route
+            path="appointments"
+            element={<ReceptionAppointments />}
+          />
+          <Route
+            path="notifications"
+            element={<ReceptionNotifications />}
+          />
           <Route path="qr" element={<ReceptionQR />} />
-          <Route path="analytics" element={<Navigate to="/reception/dashboard#analytics" replace />} />
+          <Route
+            path="analytics"
+            element={
+              <Navigate
+                to="/reception/dashboard#analytics"
+                replace
+              />
+            }
+          />
         </Route>
       </Route>
-      
+
       <Route path="*" element={<div>404 Not Found</div>} />
     </Routes>
   );
